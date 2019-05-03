@@ -8,13 +8,14 @@
     "test:w": "jest --watch"
   },
   "bin": {
-    "bsa-c20-update": "./index.js" 
+    "bsa-c20-update": "./index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "minimist": "^1.2.0",
+    "node-fetch": "^2.5.0",
     "uuid": "^3.3.2"
   },
   "devDependencies": {
