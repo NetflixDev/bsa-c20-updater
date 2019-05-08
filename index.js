@@ -8,11 +8,11 @@ const cp = require("child_process");
 
 const { cmdLog, cmdErrorLog, colors, chainPromises } = require("./lib/helpers");
 
-const BSA_API_PATH = "http://localhost:4200/api"
+const BSA_API_PATH = "http://localhost:4200/api";
 const BSA_PREVIEW_PATH = `${BSA_API_PATH}/preview?zip=false`;
 const BSA_BSIDS_PATH = `${BSA_API_PATH}/bsids`;
-const BSA_BUILD_TIMEOUT = 18000 // 5 mins
-const POLL_INTERVAL = 1000
+const BSA_BUILD_TIMEOUT = 18000; // 5 mins
+const POLL_INTERVAL = 1000;
 
 async function main(btPath, reinstall, parallel) {
   const btRepos = await _getBtRepos(btPath);
@@ -77,8 +77,8 @@ async function _makeBsaBuildRequest(body) {
       body: JSON.stringify(body),
       headers: { "Content-Type": "application/json" }
     });
-    const json = await res.json()
-    return json.bsids
+    const json = await res.json();
+    return json.bsids;
   } catch (err) {
     throw err;
   }
@@ -86,14 +86,13 @@ async function _makeBsaBuildRequest(body) {
 
 async function _pollForBsaCompletion(bsids) {
   const pollPromise = new Promise((resolve, reject) => {
-    setInterval(() => {
-      const bsidResponse = await fetch(BSA_BSIDS_PATH)
+    setInterval(async () => {
+      const bsidResponse = await fetch(BSA_BSIDS_PATH);
       // TODO: if bsid complete based on bsid endpoint response
       // notify
-    }, POLL_INTERVAL)
-  })
+    }, POLL_INTERVAL);
+  });
 }
-
 
 function _extractRepoSize(repoName) {
   const match = /\d+x\d+/.exec(repoName);
