@@ -6,29 +6,39 @@ const os = require("os");
 const fetch = require("node-fetch");
 const cp = require("child_process");
 
-const { cmdLog, cmdErrorLog, colors, chainPromises } = require("./lib/helpers");
+const {
+  progressLog,
+  cmdLog,
+  cmdErrorLog,
+  colors,
+  chainPromises
+} = require("./lib/helpers");
 
-const BSA_API_PATH = "http://localhost:4200/api"
+const BSA_API_PATH = "http://localhost:4200/api";
 const BSA_PREVIEW_PATH = `${BSA_API_PATH}/preview?zip=false`;
 const BSA_BSIDS_PATH = `${BSA_API_PATH}/bsids`;
-const BSA_BUILD_TIMEOUT = 18000 // 5 mins
-const POLL_INTERVAL = 1000
+const BSA_BUILD_TIMEOUT = 18000; // 5 mins
+const POLL_INTERVAL = 1000;
+const CREATIVE_SERVER_LIMIT = 5;
 
 async function main(btPath, reinstall, parallel) {
-  const btRepos = await _getBtRepos(btPath);
-  if (reinstall) await _reinstallBtSrcDirs(btRepos, btPath, parallel);
-  const units = _buildBsaUnits(btRepos, btPath);
-  const bsids = await _makeBsaBuildRequest({ units });
-  console.log(
-    colors.fg.Green,
-    "\nBSA Build Request made w/ following repos:\n"
-  );
-  btRepos.forEach(repo => {
-    console.log(`- ${repo}`);
-  });
-  console.log(colors.Reset);
-  //  TODO: notify when BSA done w/ each repo (use /api/bsids)
-  //  await _pollForBsaCompletion(bsids)
+  try {
+    const btRepos = await _getBtRepos(btPath);
+    if (reinstall) await _reinstallBtSrcDirs(btRepos, btPath, parallel);
+    const units = _buildBsaUnits(btRepos, btPath);
+    const bsids = await _buildFromBsa(units);
+    console.log(
+      colors.fg.Green,
+      "\nBSA Build Request made w/ following repos:\n"
+    );
+    btRepos.forEach(repo => {
+      console.log(`- ${repo}`);
+    });
+    console.log(colors.Reset);
+  } catch (err) {
+    throw err;
+    process.exit(1);
+  }
 }
 
 async function _getBtRepos(btPath) {
@@ -70,30 +80,53 @@ async function _reinstallBtSrcDirs(btRepos, btPath, parallel = false) {
     : await chainPromises(reinstallPromiseCreators)();
 }
 
-async function _makeBsaBuildRequest(body) {
-  try {
-    const res = await fetch(BSA_PREVIEW_PATH, {
+async function _buildFromBsa(units) {
+  // split up units based on CS limit
+  const reqBodies = [];
+  for (let i = 0; i < units.length; i += CREATIVE_SERVER_LIMIT) {
+    reqBodies.push({
+      units: units.slice(i, i + CREATIVE_SERVER_LIMIT)
+    });
+  }
+  const bsaBuilds = reqBodies.map((body, i) => () =>
+    fetch(BSA_PREVIEW_PATH, {
       method: "POST",
       body: JSON.stringify(body),
       headers: { "Content-Type": "application/json" }
-    });
-    const json = await res.json()
-    return json.bsids
-  } catch (err) {
-    throw err;
-  }
+    })
+      .then(_pollForBsaCompletion)
+      .then(() => {
+        progressLog(`BSA Request ${i} complete`);
+      })
+      .catch(err => {
+        throw err;
+      })
+  );
+
+  await Promise.all(bsaBuilds.map(bsaBuild => bsaBuild()));
+
+  // const bsaReqChain = chainPromises(bsaBuilds);
+  // await bsaReqChain();
 }
 
-async function _pollForBsaCompletion(bsids) {
+function _pollForBsaCompletion() {
   const pollPromise = new Promise((resolve, reject) => {
-    setInterval(() => {
-      const bsidResponse = await fetch(BSA_BSIDS_PATH)
-      // TODO: if bsid complete based on bsid endpoint response
-      // notify
-    }, POLL_INTERVAL)
-  })
+    let intervalId;
+    intervalId = setInterval(async () => {
+      const bsidStatusResponse = await fetch(BSA_BSIDS_PATH).catch(err => {
+        clearInterval(intervalId);
+        reject(err);
+      });
+      const json = await bsidStatusResponse.json();
+      // resolve if response object is empty, i.e.
+      if (!Object.keys(json).length) {
+        clearInterval(intervalId);
+        resolve();
+      }
+    }, POLL_INTERVAL);
+  });
+  return pollPromise;
 }
-
 
 function _extractRepoSize(repoName) {
   const match = /\d+x\d+/.exec(repoName);
@@ -119,7 +152,7 @@ function _buildBsaUnits(btRepos, btPath) {
   });
 }
 
-//
+// main execution
 
 const btRelPath = argv._[0];
 const reinstall = argv.reinstall;
