@@ -83,13 +83,15 @@ async function _reinstallBtSrcDirs(btRepos, btPath, parallel = false) {
 async function _buildFromBsa(units) {
   // split up units based on CS limit
   const reqBodies = [];
-  for (let i = 0; i < units.length; i += CREATIVE_SERVER_LIMIT) {
+  const splitLen = ~~(CREATIVE_SERVER_LIMIT / 2);
+  for (let i = 0; i < units.length; i += splitLen) {
     reqBodies.push({
-      units: units.slice(i, i + CREATIVE_SERVER_LIMIT)
+      units: units.slice(i, i + splitLen)
     });
   }
-  const bsaBuilds = reqBodies.map((body, i) => () =>
-    fetch(BSA_PREVIEW_PATH, {
+  const bsaBuilds = reqBodies.map((body, i) => () => {
+    progressLog(`Sending BSA Request ${i}`);
+    return fetch(BSA_PREVIEW_PATH, {
       method: "POST",
       body: JSON.stringify(body),
       headers: { "Content-Type": "application/json" }
@@ -100,29 +102,35 @@ async function _buildFromBsa(units) {
       })
       .catch(err => {
         throw err;
-      })
-  );
+      });
+  });
+  console.log(bsaBuilds);
 
-  await Promise.all(bsaBuilds.map(bsaBuild => bsaBuild()));
+  // await Promise.all(bsaBuilds.map(bsaBuild => bsaBuild()));
 
-  // const bsaReqChain = chainPromises(bsaBuilds);
-  // await bsaReqChain();
+  const promise = chainPromises(bsaBuilds)();
+  await promise;
 }
 
 function _pollForBsaCompletion() {
   const pollPromise = new Promise((resolve, reject) => {
-    let intervalId;
-    intervalId = setInterval(async () => {
-      const bsidStatusResponse = await fetch(BSA_BSIDS_PATH).catch(err => {
-        clearInterval(intervalId);
-        reject(err);
-      });
-      const json = await bsidStatusResponse.json();
-      // resolve if response object is empty, i.e.
-      if (!Object.keys(json).length) {
-        clearInterval(intervalId);
-        resolve();
-      }
+    const intervalId = setInterval(() => {
+      progressLog(`Polling for ${i}-th request`)
+      fetch(BSA_BSIDS_PATH)
+        .then(res => {
+          return res.json();
+        })
+        .then(json => {
+          // resolve if response object is empty, i.e.
+          if (!Object.keys(json).length) {
+            clearInterval(intervalId);
+            resolve();
+          }
+        })
+        .catch(err => {
+          clearInterval(intervalId);
+          reject(err);
+        });
     }, POLL_INTERVAL);
   });
   return pollPromise;
