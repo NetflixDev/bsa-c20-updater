@@ -3,22 +3,23 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "test": "jest",
-    "test:w": "jest --watch"
+  "directories": {
+    "lib": "lib"
   },
   "bin": {
-    "bsa-c20-update": "./index.js"
+    "bsa-c20-update": "index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "devDependencies": {
+    "jest": "^24.8.0"
+  },
   "dependencies": {
     "minimist": "^1.2.0",
-    "node-fetch": "^2.5.0",
-    "uuid": "^3.3.2"
-  },
-  "devDependencies": {
-    "jest": "^24.7.1"
+    "node-fetch": "^2.5.0"
   }
 }
