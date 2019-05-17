@@ -17,7 +17,7 @@ const {
 const BSA_API_PATH = "http://localhost:4200/api";
 const BSA_PREVIEW_PATH = `${BSA_API_PATH}/preview?zip=false`;
 const BSA_BSIDS_PATH = `${BSA_API_PATH}/bsids`;
-const BSA_BUILD_TIMEOUT = 18000; // 5 mins
+const BSA_BUILD_TIMEOUT = 7200; // 2 mins
 const POLL_INTERVAL = 1000;
 const CREATIVE_SERVER_LIMIT = 5;
 
@@ -96,7 +96,7 @@ async function _buildFromBsa(units) {
       body: JSON.stringify(body),
       headers: { "Content-Type": "application/json" }
     })
-      .then(_pollForBsaCompletion)
+      .then(() => _pollForBsaCompletion(i))
       .then(() => {
         progressLog(`BSA Request ${i} complete`);
       })
@@ -112,10 +112,11 @@ async function _buildFromBsa(units) {
   await promise;
 }
 
-function _pollForBsaCompletion() {
+function _pollForBsaCompletion(id) {
+  let intervalId;
   const pollPromise = new Promise((resolve, reject) => {
-    const intervalId = setInterval(() => {
-      progressLog(`Polling for ${i}-th request`);
+    intervalId = setInterval(() => {
+      progressLog(`Polling for request ${id}`);
       fetch(BSA_BSIDS_PATH)
         .then(res => {
           return res.json();
@@ -133,7 +134,13 @@ function _pollForBsaCompletion() {
         });
     }, POLL_INTERVAL);
   });
-  return pollPromise;
+  const timeout = new Promise((_, reject) => {
+    setTimeout(() => {
+      clearInterval(intervalId);
+      reject(new Error(`BSA Request ${id} timed out`));
+    }, BSA_BUILD_TIMEOUT);
+  });
+  return Promise.race([pollPromise, timeout]);
 }
 
 function _extractRepoSize(repoName) {
@@ -162,7 +169,8 @@ function _buildBsaUnits(btRepos, btPath) {
 
 // main execution
 
-const btRelPath = argv._[0];
+const btRelPath = argv._[0] || path.resolve(process.cwd());
+console.log("btRelPath", btRelPath);
 const reinstall = argv.reinstall;
 const parallel = argv.parallel;
 
