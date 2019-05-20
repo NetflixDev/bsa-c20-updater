@@ -156,7 +156,7 @@ function _buildBsaUnits(btRepos, btPath) {
       name: "src",
       build_size: size,
       build_source: {
-        build_source_path: `./c20-builder-${size}/`
+        build_source_path: `./c20-builder/c20-builder-${size}/`
       },
       build_source_options: {
         stub_paths: []
