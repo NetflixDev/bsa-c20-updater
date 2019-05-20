@@ -17,7 +17,7 @@ const {
 const BSA_API_PATH = "http://localhost:4200/api";
 const BSA_PREVIEW_PATH = `${BSA_API_PATH}/preview?zip=false`;
 const BSA_BSIDS_PATH = `${BSA_API_PATH}/bsids`;
-const BSA_BUILD_TIMEOUT = 7200; // 2 mins
+const BSA_BUILD_TIMEOUT = 7200000; // 2 mins in ms
 const POLL_INTERVAL = 1000;
 const CREATIVE_SERVER_LIMIT = 5;
 
