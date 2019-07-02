@@ -35,6 +35,7 @@ async function main(btPath, reinstall, parallel) {
       console.log(`- ${repo}`);
     });
     console.log(colors.Reset);
+    process.exit(0);
   } catch (err) {
     throw err;
     process.exit(1);
@@ -83,7 +84,8 @@ async function _reinstallBtSrcDirs(btRepos, btPath, parallel = false) {
 async function _buildFromBsa(units) {
   // split up units based on CS limit
   const reqBodies = [];
-  const splitLen = ~~(CREATIVE_SERVER_LIMIT / 2);
+  // const splitLen = ~~(CREATIVE_SERVER_LIMIT / 2);
+  const splitLen = 1
   for (let i = 0; i < units.length; i += splitLen) {
     reqBodies.push({
       units: units.slice(i, i + splitLen)
@@ -104,7 +106,6 @@ async function _buildFromBsa(units) {
         throw err;
       });
   });
-  console.log(bsaBuilds);
 
   // await Promise.all(bsaBuilds.map(bsaBuild => bsaBuild()));
 
@@ -170,7 +171,6 @@ function _buildBsaUnits(btRepos, btPath) {
 // main execution
 
 const btRelPath = argv._[0] || path.resolve(process.cwd());
-console.log("btRelPath", btRelPath);
 const reinstall = argv.reinstall;
 const parallel = argv.parallel;
 
