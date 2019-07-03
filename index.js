@@ -84,8 +84,8 @@ async function _reinstallBtSrcDirs(btRepos, btPath, parallel = false) {
 async function _buildFromBsa(units) {
   // split up units based on CS limit
   const reqBodies = [];
-  // const splitLen = ~~(CREATIVE_SERVER_LIMIT / 2);
-  const splitLen = 1
+  const splitLen = ~~(CREATIVE_SERVER_LIMIT / 2);
+  // const splitLen = 1
   for (let i = 0; i < units.length; i += splitLen) {
     reqBodies.push({
       units: units.slice(i, i + splitLen)
