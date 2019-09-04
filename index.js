@@ -24,9 +24,9 @@ const CREATIVE_SERVER_LIMIT = 5;
 async function main(btPath, reinstall, parallel) {
   try {
     const btRepos = await _getBtRepos(btPath);
-    if (reinstall) await _reinstallBtSrcDirs(btRepos, btPath, parallel);
+    // if (reinstall) await _reinstallBtSrcDirs(btRepos, btPath, parallel);
     const units = _buildBsaUnits(btRepos, btPath);
-    const bsids = await _buildFromBsa(units);
+    const bsids = await _buildFromBsa(units, reinstall);
     console.log(
       colors.fg.Green,
       "\nBSA Build Request made w/ following repos:\n"
@@ -81,19 +81,24 @@ async function _reinstallBtSrcDirs(btRepos, btPath, parallel = false) {
     : await chainPromises(reinstallPromiseCreators)();
 }
 
-async function _buildFromBsa(units) {
+async function _buildFromBsa(units, reinstall) {
   // split up units based on CS limit
   const reqBodies = [];
-  const splitLen = ~~(CREATIVE_SERVER_LIMIT / 2);
-  // const splitLen = 1
+  // const splitLen = Math.ceil(CREATIVE_SERVER_LIMIT / 2);
+  const splitLen = 1;
   for (let i = 0; i < units.length; i += splitLen) {
     reqBodies.push({
       units: units.slice(i, i + splitLen)
     });
   }
+  let extraQueryParams = ''
+  if (reinstall) {
+    const reinstallLevel = reinstall === 'top' ? 'top' : 'build'
+    extraQueryParams += `&reinstall=${reinstallLevel}`
+  }
   const bsaBuilds = reqBodies.map((body, i) => () => {
     progressLog(`Sending BSA Request ${i}`);
-    return fetch(BSA_PREVIEW_PATH, {
+    return fetch(BSA_PREVIEW_PATH + extraQueryParams, {
       method: "POST",
       body: JSON.stringify(body),
       headers: { "Content-Type": "application/json" }
@@ -131,6 +136,7 @@ function _pollForBsaCompletion(id) {
         })
         .catch(err => {
           clearInterval(intervalId);
+          process.exit(1);
           reject(err);
         });
     }, POLL_INTERVAL);
@@ -141,7 +147,9 @@ function _pollForBsaCompletion(id) {
       reject(new Error(`BSA Request ${id} timed out`));
     }, BSA_BUILD_TIMEOUT);
   });
-  return Promise.race([pollPromise, timeout]);
+  return Promise.race([pollPromise, timeout]).catch(err => {
+    throw err;
+  });
 }
 
 function _extractRepoSize(repoName) {
@@ -180,4 +188,4 @@ if (!btRelPath) {
   );
 }
 
-main(path.resolve(btRelPath), !!reinstall, !!parallel);
+main(path.resolve(btRelPath), reinstall, !!parallel);
