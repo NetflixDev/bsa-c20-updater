@@ -5,6 +5,7 @@ const path = require("path");
 const os = require("os");
 const fetch = require("node-fetch");
 const cp = require("child_process");
+const minimatch = require("minimatch");
 
 const {
   progressLog,
@@ -21,10 +22,26 @@ const BSA_BUILD_TIMEOUT = 7200000; // 2 mins in ms
 const POLL_INTERVAL = 1000;
 const CREATIVE_SERVER_LIMIT = 5;
 
-async function main(btPath, reinstall, parallel) {
+async function main({ btPath, reinstall, parallel, btMatch, dry }) {
   try {
-    const btRepos = await _getBtRepos(btPath);
-    // if (reinstall) await _reinstallBtSrcDirs(btRepos, btPath, parallel);
+    let btRepos = await _getBtRepos(btPath);
+    if (btMatch) {
+      btRepos = btRepos.filter(repo => {
+        return minimatch(repo, btMatch, {
+          matchBase: true
+        });
+      });
+    }
+
+    if (dry) {
+      console.log(colors.fg.Green, "\nWould rebuild following repos:\n");
+      btRepos.forEach(repo => {
+        console.log(`- ${repo}`);
+      });
+      console.log(colors.Reset);
+      return;
+    }
+
     const units = _buildBsaUnits(btRepos, btPath);
     const bsids = await _buildFromBsa(units, reinstall);
     console.log(
@@ -91,10 +108,10 @@ async function _buildFromBsa(units, reinstall) {
       units: units.slice(i, i + splitLen)
     });
   }
-  let extraQueryParams = ''
+  let extraQueryParams = "";
   if (reinstall) {
-    const reinstallLevel = reinstall === 'top' ? 'top' : 'build'
-    extraQueryParams += `&reinstall=${reinstallLevel}`
+    const reinstallLevel = reinstall === "top" ? "top" : "build";
+    extraQueryParams += `&reinstall=${reinstallLevel}`;
   }
   const bsaBuilds = reqBodies.map((body, i) => () => {
     progressLog(`Sending BSA Request ${i}`);
@@ -179,8 +196,10 @@ function _buildBsaUnits(btRepos, btPath) {
 // main execution
 
 const btRelPath = argv._[0] || path.resolve(process.cwd());
+const btMatch = argv.m || argv.match || null;
 const reinstall = argv.reinstall;
 const parallel = argv.parallel;
+const dry = !!argv.dry;
 
 if (!btRelPath) {
   throw new Error(
@@ -188,4 +207,10 @@ if (!btRelPath) {
   );
 }
 
-main(path.resolve(btRelPath), reinstall, !!parallel);
+main({
+  btPath: path.resolve(btRelPath),
+  reinstall,
+  parallel: !!parallel,
+  btMatch,
+  dry
+});
