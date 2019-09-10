@@ -22,9 +22,11 @@ const BSA_BUILD_TIMEOUT = 7200000; // 2 mins in ms
 const POLL_INTERVAL = 1000;
 const CREATIVE_SERVER_LIMIT = 5;
 
-async function main({ btPath, reinstall, parallel, btMatch, dry }) {
+async function main({ btPath, repos, reinstall, parallel, btMatch, dry }) {
   try {
-    let btRepos = await _getBtRepos(btPath);
+    let btRepos =
+      repos.map(repo => path.resolve(btPath, repo)) ||
+      (await _getBtRepos(btPath));
     if (btMatch) {
       btRepos = btRepos.filter(repo => {
         return minimatch(repo, btMatch, {
@@ -34,7 +36,10 @@ async function main({ btPath, reinstall, parallel, btMatch, dry }) {
     }
 
     if (dry) {
-      console.log(colors.fg.Green, "\nWould rebuild following repos:\n");
+      console.log(
+        colors.fg.Green,
+        `\n${dry ? "Would rebuild" : "Rebuilding"} following repos:\n`
+      );
       btRepos.forEach(repo => {
         console.log(`- ${repo}`);
       });
@@ -196,6 +201,15 @@ function _buildBsaUnits(btRepos, btPath) {
 // main execution
 
 const btRelPath = argv._[0] || path.resolve(process.cwd());
+let repos;
+try {
+  repos = JSON.parse(argv.r || argv.repos);
+  if (!Array.isArray(repos)) {
+    repos = null;
+  }
+} catch (err) {
+  repos = null;
+}
 const btMatch = argv.m || argv.match || null;
 const reinstall = argv.reinstall;
 const parallel = argv.parallel;
@@ -209,6 +223,7 @@ if (!btRelPath) {
 
 main({
   btPath: path.resolve(btRelPath),
+  repos,
   reinstall,
   parallel: !!parallel,
   btMatch,
