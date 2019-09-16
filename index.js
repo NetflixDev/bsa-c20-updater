@@ -25,7 +25,7 @@ const CREATIVE_SERVER_LIMIT = 5;
 async function main({ btPath, repos, reinstall, parallel, btMatch, dry }) {
   try {
     let btRepos =
-      repos.map(repo => path.resolve(btPath, repo)) ||
+      (repos && repos.map(repo => path.resolve(btPath, repo))) ||
       (await _getBtRepos(btPath));
     if (btMatch) {
       btRepos = btRepos.filter(repo => {
