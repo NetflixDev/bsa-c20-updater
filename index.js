@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-const argv = require("minimist")(process.argv.slice(2));
+const argv = require("minimist")(process.argv.slice(2), {
+  boolean: ["dry", "parallel"]
+});
 const fsPr = require("fs").promises;
 const path = require("path");
 const os = require("os");
@@ -25,7 +27,7 @@ const CREATIVE_SERVER_LIMIT = 5;
 async function main({ btPath, repos, reinstall, parallel, btMatch, dry }) {
   try {
     let btRepos =
-      (repos && repos.map(repo => path.resolve(btPath, repo))) ||
+      (repos.length && repos.map(repo => path.resolve(btPath, repo))) ||
       (await _getBtRepos(btPath));
     if (btMatch) {
       btRepos = btRepos.filter(repo => {
@@ -200,16 +202,8 @@ function _buildBsaUnits(btRepos, btPath) {
 
 // main execution
 
-const btRelPath = argv._[0] || path.resolve(process.cwd());
-let repos;
-try {
-  repos = JSON.parse(argv.r || argv.repos);
-  if (!Array.isArray(repos)) {
-    repos = null;
-  }
-} catch (err) {
-  repos = null;
-}
+const repos = argv._;
+const btRelPath = argv.p || argv.path || path.resolve(process.cwd());
 const btMatch = argv.m || argv.match || null;
 const reinstall = argv.reinstall;
 const parallel = argv.parallel;
