@@ -24,6 +24,10 @@ const BSA_BUILD_TIMEOUT = 7200000; // 2 mins in ms
 const POLL_INTERVAL = 1000;
 const CREATIVE_SERVER_LIMIT = 5;
 
+function uniq(arr) {
+  return arr.filter((item, index) => arr.indexOf(item) === index);
+}
+
 async function main({ btPath, repos, reinstall, parallel, btMatch, dry }) {
   try {
     let btRepos =
@@ -36,6 +40,7 @@ async function main({ btPath, repos, reinstall, parallel, btMatch, dry }) {
         });
       });
     }
+    btRepos = uniq(btRepos);
 
     if (dry) {
       console.log(
