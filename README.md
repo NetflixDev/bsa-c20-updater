@@ -3,7 +3,7 @@
 ## Usage
 
 - Script for updating multiple C2.0 Builder Templates using Build Source Assembler
-- Currently builds one (1) template at a time
+- Currently builds serially for more consistent results
 - Builder Templates should be in one directory
 
 ## CLI Arguments
