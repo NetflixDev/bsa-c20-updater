@@ -9,6 +9,11 @@ This is a script for updating multiple C2.0 Builder Templates using Build Source
   - runs the `c20` npm script to redistribute the `src` files
   - thru git, commits all the changes with the given commit message then pushes to `master`
 
+## Installation
+
+1. Clone this repo
+2. Then `cd` into the repo then run `npm install --global .` to install the command line binaries
+
 ## Usage
 
 1. Run the Build Source Assembler app at localhost:4200
