@@ -9,7 +9,7 @@ function bt_redist_push() {
   git push
 }
 
-for bt in "bt-*"
+for bt in bt-ER-*
 do
   cd "$bt"
   bt_redist_push "$1"
