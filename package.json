@@ -1,5 +1,5 @@
 {
-  "name": "bsa-c20-updater",
+  "name": "@netflixdev/bsa-c20-updater",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -11,13 +11,15 @@
     "bt-redist-push": "bt-redist-push.sh"
   },
   "scripts": {
+    "pub": "np",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "jest": "^24.8.0"
+    "jest": "^24.8.0",
+    "np": "^6.1.0"
   },
   "dependencies": {
     "minimatch": "^3.0.4",
