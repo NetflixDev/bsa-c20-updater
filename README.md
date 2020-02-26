@@ -11,8 +11,9 @@ This is a script for updating multiple C2.0 Builder Templates using Build Source
 
 ## Installation
 
-1. Clone this repo
-2. Then `cd` into the repo then run `npm install --global .` to install the command line binaries
+```
+npm i --global @netflixdev/bsa-c20-updater
+```
 
 ## Usage
 
