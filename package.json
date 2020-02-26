@@ -11,8 +11,7 @@
     "bt-redist-push": "bt-redist-push.sh"
   },
   "scripts": {
-    "pub": "np",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "pub": "np"
   },
   "keywords": [],
   "author": "",
